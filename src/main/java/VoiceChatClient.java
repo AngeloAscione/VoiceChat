@@ -11,7 +11,7 @@ public class VoiceChatClient extends JFrame implements KeyListener {
     private static final int SERVER_PORT = 50005;
     private static final int BUFFER_SIZE = 4096;
 
-    private boolean isTalking = false;      // Stato push-to-talk
+    private boolean isTalking = false;      // Stato toggle per il push-to-talk
     private boolean isReceiving = false;    // Stato per bloccare l'invio durante la ricezione
 
     public VoiceChatClient() {
@@ -51,7 +51,7 @@ public class VoiceChatClient extends JFrame implements KeyListener {
 
             System.out.println("Voice Chat Client is running...");
 
-            // Thread per inviare l'audio al server (solo quando si tiene premuto il tasto Y e non in ricezione)
+            // Thread per inviare l'audio al server (solo quando il push-to-talk è attivo e non in ricezione)
             new Thread(() -> {
                 try {
                     while (true) {
@@ -96,13 +96,13 @@ public class VoiceChatClient extends JFrame implements KeyListener {
         }
     }
 
-    // Metodi per rilevare la pressione e il rilascio del tasto Y
+    // Metodo per rilevare la pressione del tasto Y e attivare/disattivare il push-to-talk
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_Y) {
-            if (!isReceiving) {  // Permetti di parlare solo se non si sta ricevendo
-                isTalking = true;
-                System.out.println("Push-to-talk attivato");
+            if (!isReceiving) {  // Permetti di cambiare stato solo se non si sta ricevendo
+                isTalking = !isTalking;  // Toggle tra abilitato e disabilitato
+                System.out.println("Push-to-talk " + (isTalking ? "abilitato" : "disabilitato"));
             } else {
                 System.out.println("Impossibile parlare, si sta ricevendo audio.");
             }
@@ -111,10 +111,7 @@ public class VoiceChatClient extends JFrame implements KeyListener {
 
     @Override
     public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_Y) {
-            isTalking = false;
-            System.out.println("Push-to-talk disattivato");
-        }
+        // Non necessario con il funzionamento a toggle
     }
 
     @Override
