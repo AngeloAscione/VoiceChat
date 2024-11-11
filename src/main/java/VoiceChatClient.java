@@ -6,7 +6,7 @@ import java.net.InetAddress;
 public class VoiceChatClient {
     private static final String SERVER_ADDRESS = "localhost";
     private static final int SERVER_PORT = 50005;
-    private static final int BUFFER_SIZE = 2048;
+    private static final int BUFFER_SIZE = 2;
 
     public static void main(String[] args) {
         try {

@@ -4,7 +4,7 @@ import java.net.DatagramSocket;
 
 public class VoiceChatServer {
     private static final int PORT = 50005;
-    private static final int BUFFER_SIZE = 2048;
+    private static final int BUFFER_SIZE = 2;
 
     public static void main(String[] args) {
         try {
