@@ -1,17 +1,17 @@
 import javax.sound.sampled.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import javax.swing.JFrame;
 
 public class VoiceChatClient extends JFrame implements KeyListener {
-    private static final String SERVER_ADDRESS = "localhost";  // Indirizzo del server
+    private static final String SERVER_ADDRESS = "localhost";  // Cambia con l'IP del server
     private static final int SERVER_PORT = 50005;
     private static final int BUFFER_SIZE = 4096;
 
-    private boolean isTalking = false;  // Stato del tasto push-to-talk
+    private boolean isTalking = false;  // Stato push-to-talk
 
     public VoiceChatClient() {
         // Configura la finestra per ascoltare gli eventi del tasto
@@ -28,16 +28,16 @@ public class VoiceChatClient extends JFrame implements KeyListener {
 
     public void startVoiceChat() {
         try {
-            // Imposta il formato audio per la cattura e la riproduzione
+            // Configura il formato audio
             AudioFormat format = new AudioFormat(16000.0f, 16, 1, true, true);
 
-            // Configura il microfono (TargetDataLine) per la cattura audio
+            // Configura il microfono per la cattura audio
             DataLine.Info micInfo = new DataLine.Info(TargetDataLine.class, format);
             TargetDataLine microphone = (TargetDataLine) AudioSystem.getLine(micInfo);
             microphone.open(format);
             microphone.start();
 
-            // Configura lo speaker (SourceDataLine) per la riproduzione audio
+            // Configura lo speaker per la riproduzione audio
             DataLine.Info speakerInfo = new DataLine.Info(SourceDataLine.class, format);
             SourceDataLine speaker = (SourceDataLine) AudioSystem.getLine(speakerInfo);
             speaker.open(format);
@@ -50,7 +50,7 @@ public class VoiceChatClient extends JFrame implements KeyListener {
 
             System.out.println("Voice Chat Client is running...");
 
-            // Avvia un thread per l'invio dell'audio al server quando il tasto Y è premuto
+            // Thread per inviare l'audio al server (solo quando si tiene premuto il tasto Y)
             new Thread(() -> {
                 try {
                     while (true) {
@@ -59,7 +59,7 @@ public class VoiceChatClient extends JFrame implements KeyListener {
                             DatagramPacket packet = new DatagramPacket(buffer, bytesRead, serverAddress, SERVER_PORT);
                             socket.send(packet);
                         }
-                        // Aggiunge un breve ritardo per evitare un uso eccessivo della CPU
+                        // Evita l'uso eccessivo della CPU
                         Thread.sleep(10);
                     }
                 } catch (Exception e) {
@@ -67,13 +67,13 @@ public class VoiceChatClient extends JFrame implements KeyListener {
                 }
             }).start();
 
-            // Avvia un thread per la ricezione dell'audio dal server
+            // Thread per ricevere l'audio dal server e riprodurlo
             new Thread(() -> {
                 try {
                     while (true) {
                         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                         socket.receive(packet);
-                        // Riproduce l'audio ricevuto
+                        // Riproduce l'audio ricevuto tramite lo speaker
                         speaker.write(packet.getData(), 0, packet.getLength());
                     }
                 } catch (Exception e) {

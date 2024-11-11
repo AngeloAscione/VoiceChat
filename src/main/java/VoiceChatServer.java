@@ -1,4 +1,3 @@
-import javax.sound.sampled.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -9,44 +8,38 @@ import java.util.Set;
 public class VoiceChatServer {
     private static final int PORT = 50005;
     private static final int BUFFER_SIZE = 4096;
+
+    // Set per memorizzare i client connessi
     private static Set<ClientInfo> clients = Collections.synchronizedSet(new HashSet<>());
 
     public static void main(String[] args) {
         try {
-            // Imposta il formato audio per la riproduzione
-            AudioFormat format = new AudioFormat(16000.0f, 16, 1, true, true);
-            DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
-            SourceDataLine speaker = (SourceDataLine) AudioSystem.getLine(info);
-            speaker.open(format);
-            speaker.start();
-
             // Crea il socket per ricevere pacchetti UDP
             DatagramSocket socket = new DatagramSocket(PORT);
             byte[] buffer = new byte[BUFFER_SIZE];
 
             System.out.println("Voice Chat Server is running...");
 
-            // Loop per gestire i pacchetti audio in arrivo
+            // Loop principale per ricevere e inoltrare pacchetti
             while (true) {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
 
-                // Aggiunge il nuovo client all'elenco
-                ClientInfo client = new ClientInfo(packet.getAddress(), packet.getPort());
-                clients.add(client);
+                // Ottiene le informazioni del client mittente
+                ClientInfo sender = new ClientInfo(packet.getAddress(), packet.getPort());
+
+                // Aggiunge il client all'elenco se non è già presente
+                clients.add(sender);
 
                 // Inoltra il pacchetto a tutti gli altri client
-                forwardPacketToClients(socket, packet, client);
-
-                // Riproduci l'audio in locale
-                //speaker.write(packet.getData(), 0, packet.getLength());
+                forwardPacketToClients(socket, packet, sender);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    // Metodo per inoltrare il pacchetto a tutti i client tranne quello che l'ha inviato
+    // Metodo per inoltrare il pacchetto a tutti i client tranne il mittente
     private static void forwardPacketToClients(DatagramSocket socket, DatagramPacket packet, ClientInfo sender) {
         byte[] data = packet.getData();
         for (ClientInfo client : clients) {
@@ -83,6 +76,14 @@ public class VoiceChatServer {
         @Override
         public int hashCode() {
             return address.hashCode() * 31 + port;
+        }
+
+        @Override
+        public String toString() {
+            return "ClientInfo{" +
+                    "address=" + address +
+                    ", port=" + port +
+                    '}';
         }
     }
 }
