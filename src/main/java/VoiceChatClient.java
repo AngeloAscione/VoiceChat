@@ -11,7 +11,8 @@ public class VoiceChatClient extends JFrame implements KeyListener {
     private static final int SERVER_PORT = 50005;
     private static final int BUFFER_SIZE = 4096;
 
-    private boolean isTalking = false;  // Stato push-to-talk
+    private boolean isTalking = false;      // Stato push-to-talk
+    private boolean isReceiving = false;    // Stato per bloccare l'invio durante la ricezione
 
     public VoiceChatClient() {
         // Configura la finestra per ascoltare gli eventi del tasto
@@ -50,11 +51,11 @@ public class VoiceChatClient extends JFrame implements KeyListener {
 
             System.out.println("Voice Chat Client is running...");
 
-            // Thread per inviare l'audio al server (solo quando si tiene premuto il tasto Y)
+            // Thread per inviare l'audio al server (solo quando si tiene premuto il tasto Y e non in ricezione)
             new Thread(() -> {
                 try {
                     while (true) {
-                        if (isTalking) {
+                        if (isTalking && !isReceiving) {  // Invia solo se è abilitato il push-to-talk e non si sta ricevendo
                             int bytesRead = microphone.read(buffer, 0, buffer.length);
                             DatagramPacket packet = new DatagramPacket(buffer, bytesRead, serverAddress, SERVER_PORT);
                             socket.send(packet);
@@ -73,8 +74,17 @@ public class VoiceChatClient extends JFrame implements KeyListener {
                     while (true) {
                         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                         socket.receive(packet);
+
+                        // Attiva la modalità "ricezione" e disabilita l'invio
+                        isReceiving = true;
+                        System.out.println("Ricezione audio in corso. Invio disabilitato.");
+
                         // Riproduce l'audio ricevuto tramite lo speaker
                         speaker.write(packet.getData(), 0, packet.getLength());
+
+                        // Terminata la ricezione, disabilita la modalità "ricezione"
+                        isReceiving = false;
+                        System.out.println("Fine ricezione audio. Invio abilitato.");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -90,8 +100,12 @@ public class VoiceChatClient extends JFrame implements KeyListener {
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_Y) {
-            isTalking = true;
-            System.out.println("Push-to-talk attivato");
+            if (!isReceiving) {  // Permetti di parlare solo se non si sta ricevendo
+                isTalking = true;
+                System.out.println("Push-to-talk attivato");
+            } else {
+                System.out.println("Impossibile parlare, si sta ricevendo audio.");
+            }
         }
     }
 

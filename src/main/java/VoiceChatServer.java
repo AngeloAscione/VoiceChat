@@ -16,23 +16,26 @@ public class VoiceChatServer {
         try {
             // Crea il socket per ricevere pacchetti UDP
             DatagramSocket socket = new DatagramSocket(PORT);
-            byte[] buffer = new byte[BUFFER_SIZE];
 
             System.out.println("Voice Chat Server is running...");
 
             // Loop principale per ricevere e inoltrare pacchetti
             while (true) {
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                socket.receive(packet);
+                // Crea un nuovo buffer e un DatagramPacket per ogni ricezione
+                byte[] buffer = new byte[BUFFER_SIZE];
+                DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
+
+                // Ricevi il pacchetto
+                socket.receive(receivedPacket);
 
                 // Ottiene le informazioni del client mittente
-                ClientInfo sender = new ClientInfo(packet.getAddress(), packet.getPort());
+                ClientInfo sender = new ClientInfo(receivedPacket.getAddress(), receivedPacket.getPort());
 
                 // Aggiunge il client all'elenco se non è già presente
                 clients.add(sender);
 
                 // Inoltra il pacchetto a tutti gli altri client
-                forwardPacketToClients(socket, packet, sender);
+                forwardPacketToClients(socket, receivedPacket, sender);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -46,7 +49,10 @@ public class VoiceChatServer {
             // Non invia il pacchetto al client mittente
             if (!client.equals(sender)) {
                 try {
-                    DatagramPacket forwardPacket = new DatagramPacket(data, data.length, client.address, client.port);
+                    // Crea un nuovo buffer e un nuovo DatagramPacket per ogni client
+                    byte[] clientBuffer = new byte[data.length];
+                    System.arraycopy(data, 0, clientBuffer, 0, data.length);
+                    DatagramPacket forwardPacket = new DatagramPacket(clientBuffer, clientBuffer.length, client.address, client.port);
                     socket.send(forwardPacket);
                 } catch (Exception e) {
                     System.out.println("Errore nell'invio a " + client);
